@@ -1,4 +1,5 @@
 import ingest
+from ingest import parse_time
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -12,39 +13,32 @@ from datetime import datetime
 TIME_TO_LENGTH = 8e-5
 NUM_ITERS = 500
 K_SPRING = 0.01
-K_GEO = 0.005
+K_GEO = 0.009
 K_REPULSION = 2e-12
 K_DAMPING = 0.7
 
-
-df = ingest.import_data()
-
-# ---------------------- import image
 minlon = -79.96244
 maxlon = -79.90803
 maxlat = 40.45139
 minlat = 40.42193
-rangelat = maxlat - minlat
-rangelon = maxlon - minlon
 
-lon2lat = rangelon/rangelat
+df = ingest.import_data(minlon, minlat, maxlon, maxlat)
+
+df = df[df.trip_id == 10906020]
+print(df)
+
+# ---------------------- import image
+
 image = np.array(Image.open("./mappic.png"))
 image_rows, image_cols, numChannels = np.shape(image)
 fig, (ax, ax2, ax3) = plt.subplots(3, 1)
 ax.imshow(image, extent=(minlon, maxlon, minlat, maxlat))
 
-legalpoints = df[lambda x: (minlon < x['stop_lon']) & (x['stop_lon'] < maxlon) \
-                         & (minlat < x['stop_lat']) & (x['stop_lat'] < maxlat)]\
-                [['stop_lon', 'stop_lat']].to_numpy()
-
-timesteps   = df[lambda x: (minlon < x['stop_lon']) & (x['stop_lon'] < maxlon) \
-                         & (minlat < x['stop_lat']) & (x['stop_lat'] < maxlat)]\
-                [['arrival_time']].to_numpy().T[0]
-timesteps   = np.array([datetime.strptime(x, "%H:%M:%S") for x in timesteps])
-
-testing     = df[lambda x: (minlon < x['stop_lon']) & (x['stop_lon'] < maxlon) \
-                         & (minlat < x['stop_lat']) & (x['stop_lat'] < maxlat)]\
-                [['stop_name', 'arrival_time']]
+legalpoints = df[['stop_lon', 'stop_lat']].to_numpy()
+timesteps = df[['arrival_time']].to_numpy().T[0]
+timesteps   = np.array(list(map(parse_time, timesteps)))
+print(timesteps)
+# timesteps   = np.array([datetime.strptime(x, "%H:%M:%S") for x in timesteps])
 
 num_points = len(legalpoints)
 positions = legalpoints.copy()
